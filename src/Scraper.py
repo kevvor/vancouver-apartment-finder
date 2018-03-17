@@ -16,14 +16,16 @@ import src.settings as settings
 from src.DatabaseOperations import ClListing, KjListing, create_sqlite_session
 from src.Google import get_coords, get_travel_time
 
-
 # TODO: whole module needs refactoring....repetitive functions etc.
 
 session = create_sqlite_session()
+
+
 def getCraigslistGen(area):
     log.info('getting Craigslist generator')
     cl_h = CraigslistHousing(
-        site=settings.CRAIGSLIST_SITE, area=area,
+        site=settings.CRAIGSLIST_SITE,
+        area=area,
         category=settings.CRAIGSLIST_HOUSING_SECTION,
         filters={
             'max_price': settings.MAX_PRICE,
@@ -31,11 +33,11 @@ def getCraigslistGen(area):
             "hasPic": settings.HAS_IMAGE,
             "postal": settings.POSTAL,
             "search_distance": settings.SEARCH_DISTANCE
-            }
-        )
+        })
 
-    gen = cl_h.get_results(sort_by='newest', geotagged=True, limit = 100)
+    gen = cl_h.get_results(sort_by='newest', geotagged=True, limit=100)
     return gen
+
 
 def checkResult(result):
     """ Check the craigslist listing for various tests.
@@ -52,6 +54,7 @@ def checkResult(result):
 
     return result_check
 
+
 def getGeoInfo(result):
     if result["geotag"]:
         # Assign the coordinates.
@@ -67,6 +70,7 @@ def getGeoInfo(result):
         geo_data = match_neighbourhood(result['where'])
         result.update(geo_data)
     return result
+
 
 def scrapeCraigslist(area):
     """
@@ -91,19 +95,17 @@ def scrapeCraigslist(area):
             log.warning('failed checkresult ' + result['title'])
             continue
 
-
         commute = True
         commute_time = settings.MAX_COMMUTE_TIME
         if result['lat'] != 0 and result['lon'] != 0:
             commute, commute_time = check_commute_time(result['lat'],
-                                        result['lon'])
+                                                       result['lon'])
         # Try parsing the price.
         try:
             result['price'] = float(result["price"].replace("$", ""))
         except Exception as err:
-            log.exception('Error parsing price for result: %s Error: %s'
-                % (result,str(err)))
-
+            log.exception('Error parsing price for result: %s Error: %s' %
+                          (result, str(err)))
 
         histCLListing(result)
 
@@ -119,6 +121,7 @@ def scrapeCraigslist(area):
 
     return results
 
+
 ## MOVE THESE TO DBO ??
 def histCLListing(result):
     # Create the listing object.
@@ -128,61 +131,63 @@ def histCLListing(result):
         lat=result['lat'],
         lon=result['lon'],
         title=result["title"],
-        price=result.get('price',0),
+        price=result.get('price', 0),
         location=result["where"],
         id=result["id"],
         area=result["area"],
-        metro_stop=result["metro"]
-    )
+        metro_stop=result["metro"])
 
     # Save the listing so we don't grab it again.
     if not settings.TESTING:
         session.add(listing)
         session.commit()
     return
+
 
 def histKjListing(result):
     # Create the listing object.
     listing = KjListing(
-        id = result['id'],
-        link = result['url'],
-        price = result['price'],
-        title = result['title'],
-        address = result['address']
-    )
+        id=result['id'],
+        link=result['url'],
+        price=result['price'],
+        title=result['title'],
+        address=result['address'])
 
     # Save the listing so we don't grab it again.
     if not settings.TESTING:
         session.add(listing)
         session.commit()
     return
+
 
 def checkTitle(name):
     """
     check the listing title to see if it's a studio or furnished
     """
-    STUDIO = re.compile('studio',re.IGNORECASE)
-    BACHELOR = re.compile('bachelor',re.IGNORECASE)
-    FURNISHED = re.compile('furnished',re.IGNORECASE)
+    STUDIO = re.compile('studio', re.IGNORECASE)
+    BACHELOR = re.compile('bachelor', re.IGNORECASE)
+    FURNISHED = re.compile('furnished', re.IGNORECASE)
 
-    m1 = re.search(STUDIO,name)
-    m2 = re.search(FURNISHED,name)
-    m3 = re.search(BACHELOR,name)
+    m1 = re.search(STUDIO, name)
+    m2 = re.search(FURNISHED, name)
+    m3 = re.search(BACHELOR, name)
 
     if m1 or m2:
         return False
     else:
         return True
 
+
 def check_commute_time(lat, lon):
     commute = True
     commute_time = settings.MAX_COMMUTE_TIME
     from_address = str(lat) + ',' + str(lon)
     commute_time = get_travel_time(from_address)
-    if commute_time: ## if the get_travel_time fails, return True
+    if commute_time:  ## if the get_travel_time fails, return True
         if commute_time > settings.MAX_COMMUTE_TIME:
             commute = False
     return commute, commute_time
+
 
 def scrapeKijiji():
     kijiji = Kijiji()
@@ -191,7 +196,8 @@ def scrapeKijiji():
     results = []
     for result in base_results:
         try:
-            listing = session.query(KjListing).filter_by(id=result["id"]).first()
+            listing = session.query(KjListing).filter_by(
+                id=result["id"]).first()
 
             ## if listing is already in the db and in production mode, don't append
             if listing and not settings.TESTING:
@@ -202,7 +208,7 @@ def scrapeKijiji():
             lat, lon = get_coords(result['address'])
             if lat and lon:
                 # Annotate the result with information about the area it's in and points of interest near it.
-                geo_data = find_points_of_interest([lat,lon])
+                geo_data = find_points_of_interest([lat, lon])
                 result.update(geo_data)
 
                 commute, commute_time = check_commute_time(lat, lon)
@@ -230,6 +236,12 @@ def do_scrape():
     # Create a slack client.
     sc = SlackClient(settings.SLACK_TOKEN)
 
+    sc.api_call(
+        "chat.postMessage",
+        channel='#general',
+        username=settings.SLACK_BOT,
+        icon_emoji=':robot_face:')
+
     # Get all the results from craigslist.
     if settings.CRAIGSLIST:
         all_results = []
@@ -237,7 +249,8 @@ def do_scrape():
             log.info('scraping Craigslist area %s' % area)
             all_results += scrapeCraigslist(area)
 
-        log.info("{}: Got {} results for Craigslist".format(time.ctime(), len(all_results)))
+        log.info("{}: Got {} results for Craigslist".format(
+            time.ctime(), len(all_results)))
 
         # Post each result to slack.
         log.info('posting craigslist listings to slack')
@@ -249,7 +262,8 @@ def do_scrape():
         log.info('scraping kijiji')
         all_results = scrapeKijiji()
 
-        log.info("{}: Got {} results from Kijiji".format(time.ctime(), len(all_results)))
+        log.info("{}: Got {} results from Kijiji".format(
+            time.ctime(), len(all_results)))
 
         log.info('posting kijiji listings to slack')
         for result in all_results:

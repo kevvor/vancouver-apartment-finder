@@ -1,14 +1,13 @@
 import os
-
+import src.private as private
 
 ####################
 ### TESTING MODE ###
 ####################
 
 # Toggle testing to true/false for testing mode
-TESTING = False
-TESTING_CHANNEL = 'testing'
-
+TESTING = True
+TESTING_CHANNEL = private.DEFAULT_CHANNEL
 
 #########################
 ### FEATURES TOGGLING ###
@@ -16,7 +15,7 @@ TESTING_CHANNEL = 'testing'
 
 # SITES - Set to True/False if you want them scraped
 CRAIGSLIST = True
-KIJIJI = True
+KIJIJI = False
 
 # True if you would like posts with the image preview, and other parameters
 # False if you would prefer simple posts with default description & url
@@ -30,19 +29,19 @@ MIN_THUMBS_UP = 1
 ######################
 
 # The minimum rent you want to pay per month.
-MIN_PRICE = 500
+MIN_PRICE = 1000
 
 # The maximum rent you want to pay per month.
 MAX_PRICE = 2200
 
 # Kijiji/Craiglist image requirement: 0 or 1
-HAS_IMAGE = 1
+HAS_IMAGE = 0
 
 #Kijiji/postal code to search within
-POSTAL = 'M5J1E6'
+POSTAL = 'V5N4B9'
 
 #distance
-SEARCH_DISTANCE = 5
+SEARCH_DISTANCE = 1
 
 #time of the day you leave for work
 HOUR_DEPART = 8
@@ -51,8 +50,8 @@ MINUTE_DEPART = 0
 ## how do you get to work?
 ## accepts: driving, walking, bicycling, transit
 TRAVEL_MODE = 'transit'
-TRANSIT_MODE = 'subway|tram|bus'
-WORK_ADDRESS = "5140+Yonge+St+North+York+ON+M2N+6X7"
+TRANSIT_MODE = 'subway|bus'
+WORK_ADDRESS = "701+W+Georgia+St+Vancvouer+BC+V7Y+1C6"
 
 ## longest work commute time your willing to endure!
 MAX_COMMUTE_TIME = 250
@@ -62,13 +61,13 @@ MAX_COMMUTE_TIME = 250
 #######################
 
 # Name of your slack bot
-SLACK_BOT = 'toby'
+SLACK_BOT = 'Craig'
 
 # For each site, map the key name from the scraping result to the description
 # you would like to appear in the slack post
 SLACK_PARAMS = {
     'craigslist': {
-        'price' : 'Price: ',
+        'price': 'Price: ',
         'metro_dist': 'Subway (km): ',
         'area': 'Neighborhood: ',
         'where': 'Address: ',
@@ -77,7 +76,7 @@ SLACK_PARAMS = {
         'commute': 'Commute Time (min): '
     },
     'kijiji': {
-        'price' : 'Price: ',
+        'price': 'Price: ',
         'address': 'Address: ',
         'metro_dist': 'Subway (km): ',
         'area': 'Neighborhood: ',
@@ -85,7 +84,6 @@ SLACK_PARAMS = {
         'commute': 'Commute Time (min): '
     }
 }
-
 
 # enter the parameters you would like to have colour coded
 # there are two types of colour coding methodologies
@@ -120,12 +118,9 @@ COLOURS = {
     },
     'area': {
         'levels': {
-            'good': ['st-lawrence', 'queen-west', 'liberty-village',
-                'ossington', 'Queen', 'King', 'Liberty'],
-            'warning': ['distillery','financial-district', 'mid-west',
-                'Spadina', 'College', 'Downtown'],
-            'danger': ['yonge-corridor','bloor-west', 'Yonge',
-                'Bloor', 'Toronto']
+            'good': ['commercial-broadway'],
+            'warning': [],
+            'danger': ['kits', 'Vancouver']
         },
         'type': "list"
     }
@@ -136,32 +131,14 @@ COLOURS = {
 # consistently formatted
 COLOUR_PARAM_ORDER = ['price', 'area', 'metro_dist', 'commute']
 
-
 # map each neighborhood to the slack channel you would like it posted in
 
 SLACK_CHANNELS = {
-    'st-lawrence': 'south-east',
-    'distillery': 'south-east',
-    'queen-west': 'queen-west',
-    'Queen': 'queen-west',
-    'liberty-village': 'liberty-village',
-    'Liberty': 'liberty-village',
-    'ossington': 'liberty-village',
-    'Downtown': 'downtown',
-    'financial-district': 'downtown',
-    'yonge-corridor': 'downtown',
-    'Yonge': 'downtown',
-    'King': 'downtown',
-    'mid-west': 'mid-west',
-    'bloor-west': 'mid-west',
-    'Bloor': 'mid-west',
-    'Toronto': 'mid-west',
-    'College': 'mid-west',
-    'Spadina': 'mid-west'
+    'commercial-broadway': 'general',
 }
 
 # default channel for listings to be posted to
-DEFAULT_CHANNEL = 'mid-west'
+DEFAULT_CHANNEL = private.DEFAULT_CHANNEL
 
 # default colour for slack messages
 DEFAULT_COLOUR = '#524e4d'
@@ -170,9 +147,6 @@ DEFAULT_COLOUR = '#524e4d'
 # For ex., defaults will be posted first, followed by any fields with a 'good' rating
 COLOUR_ORDER = [DEFAULT_COLOUR, 'good', 'warning', 'danger']
 
-
-
-
 ###########################
 ### CRAIGSLIST SETTINGS ###
 ###########################
@@ -180,13 +154,12 @@ COLOUR_ORDER = [DEFAULT_COLOUR, 'good', 'warning', 'danger']
 # The Craigslist site you want to search on.
 # For instance, https://sfbay.craigslist.org is SF and the Bay Area.
 # You only need the beginning of the URL.
-CRAIGSLIST_SITE = 'toronto'
+CRAIGSLIST_SITE = 'vancouver'
 
 # What Craigslist subdirectories to search on.
 # For instance, https://sfbay.craigslist.org/eby/ is the East Bay, and https://sfbay.craigslist.org/sfc/ is San Francisco.
 # You only need the last three letters of the URLs.
-AREAS = ["tor"]
-
+AREAS = ["van"]
 
 # The Craigslist section underneath housing that you want to search in.
 # For instance, https://sfbay.craigslist.org/search/apa find apartments for rent.
@@ -202,10 +175,11 @@ UNIT_TYPE_MAP = {
     'studio': 'b-bachelor-studio',
     '1bed': 'b-1-bedroom-apartments-condos/city-of-toronto/c212l1700273',
     '2bed': 'b-2-bedroom-apartments-condos/city-of-toronto/c214l1700273',
-    '1bed_den': 'b-1-bedroom-den-apartments-condos/city-of-toronto/c213l1700273',
+    '1bed_den':
+    'b-1-bedroom-den-apartments-condos/city-of-toronto/c213l1700273',
     'all': 'b-apartments-condos/city-of-toronto/c37l1700273',
     'house': 'b-house-rental/city-of-toronto/c43l1700273'
-    }
+}
 
 # enter the types of units you would like to parse
 # 'all' includes studios, 1beds, 1beds + den
@@ -215,7 +189,6 @@ UNIT_TYPES = ['all', 'house']
 # 0 if you want un-furnished units, 1 for furnished units
 FURNISHED = 0
 
-
 ############################
 ### LOCATION PREFERENCES ###
 ############################
@@ -224,118 +197,27 @@ FURNISHED = 0
 # attached will be checked to see which area it is in.  If there's a match, it will be annotated with the area
 # name.  If no match, the neighborhood field, which is a string, will be checked to see if it matches
 # anything in NEIGHBORHOODS.
-BOXES = [
-    ("distillery", [
-        [43.650516, -79.35236],
-        [43.655841,	-79.370513],
-    ]),
-    ("st-lawrence", [
-        [43.644507, -79.370513],
-        [43.655841, -79.376349],
-    ]),
-    ("financial-district", [
-        [43.644662, -79.376521],
-        [43.649879, -79.387422],
-    ]),
-    ("yonge-corridor", [
-        [43.649879, -79.383602],
-        [43.670557, -79.387422],
-    ]),
-    ("mid-west", [
-        [43.650516, -79.389224],
-        [43.669222, -79.412184],
-    ]),
-    ("mid-west", [
-        [43.649321, -79.394953],
-        [43.663867, -79.417913],
-    ]),
-    ("queen-west", [
-        [43.643855, -79.384825],
-        [43.65104, -79.407785],
-    ]),
-    ("queen-west", [
-        [43.641753, -79.391048],
-        [43.648938, -79.41227],
-    ]),
-    ("queen-west", [
-        [43.640439, -79.40094],
-        [43.643638, -79.410735],
-    ]),
-    ("liberty-village", [
-        [43.637706, -79.411068],
-        [43.644818, -79.427682],
-    ]),
-    ("liberty-village", [
-        [43.635904, -79.417849],
-        [43.639165, -79.426863],
-    ]),
-    ("ossington", [
-        [43.643739, -79.417977],
-        [43.64894, -79.421411],
-    ]),
-    ("ossington", [
-        [43.648905, -79.420209],
-        [43.658337, -79.423728],
-    ]),
-    ("ossington", [
-        [43.652631, -79.422354],
-        [43.662062, -79.425874],
-    ]),
-    ("bloor-west", [
-        [43.657689, -79.427537],
-        [43.667313, -79.452792],
-    ]),
-    ("bloor-west", [
-        [43.661725, -79.407195],
-        [43.671348, -79.432451],
-    ]),
-    ("bloor-west", [
-        [43.667251, -79.388999],
-        [43.676873, -79.414255],
-    ])
-]
-
-
+BOXES = [("commercial-broadway", [[49.256729, -123.057378],
+                                  [49.269590, -123.077093]])]
 
 # A list of neighborhood names to look for in the Craigslist neighborhood name field. If a listing doesn't fall into
 # one of the boxes you defined, it will be checked to see if the neighborhood name it was listed under matches one
 # of these.  This is less accurate than the boxes, because it relies on the owner to set the right neighborhood,
 # but it also catches listings that don't have coordinates (many listings are missing this info).
-NEIGHBORHOODS = ['Yonge','Bloor','Queen','King','Toronto','Downtown','Liberty','Spadina','College']
-
+NEIGHBORHOODS = ['Commercial Drive', 'East Van', 'Commercial-Broadway']
 
 ## Transit preferences
 # The farthest you want to live from a transit stop.
-MAX_TRANSIT_DIST = 4 # kilometers
+MAX_TRANSIT_DIST = 1  # kilometers
 
 # Transit stations you want to check against.  Every coordinate here will be checked against each listing,
 # and the closest station name will be added to the result and posted into Slack.
 TRANSIT_STATIONS = {
-    "st_andrew": [43.647400, -79.384358],
-    "osgoode": [43.650754, -79.386718],
-    "union": [43.645599, -79.380367],
-    "king": [43.648674, -79.377835],
-    "queen": [43.652307, -79.379208],
-    "college": [43.6613247, -79.3852633],
-    "dundas": [43.6552859, -79.3797379],
-    "st_patrick": [43.6548307,-79.3905372],
-    "queens_park": [43.6598804,-79.3926655],
-    "museum": [43.6671223,-79.3956618],
-    "spadina": [43.6673568,-79.4059985],
-    "st_george": [43.6682622,-79.402047],
-    "wellesley": [43.6654593,-79.3860771],
-    "bloor_yonge": [43.6709058,-79.3878259],
-    "bay": [43.6701472,-79.3928834],
-    'dupont': [43.6748551,-79.4092697],
-    'bathurst': [43.6666064,-79.4110757],
-    'christie': [43.6641199,-79.4205082],
-    'ossington': [43.662437,-79.4283647],
-    'dufferin': [43.6601077,-79.437617]
+    "commercial-broadway": [49.2620791, -123.0674535],
 }
 
 # Directory in your folder where you want the log files stored
 LOG_PATH = 'logs'
-
 
 # The token that allows us to connect to slack.
 # Should be put in private.py, or set as an environment variable.
@@ -348,10 +230,9 @@ except ImportError:
     try:
         from src.private import *
     except:
-        print ('no private.py module')
+        print('no private.py module')
 except Exception:
-    print ('no private.py module')
-
+    print('no private.py module')
 
 # Any external private settings are imported from here.
 try:

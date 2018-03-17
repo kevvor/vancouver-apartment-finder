@@ -24,8 +24,9 @@ if __name__ == "__main__":
         logname = time.strftime("%Y_%m_%d-%H_%M_%S")
         log.basicConfig(
             format='%(asctime)s  - %(module)s - %(levelname)s - %(message)s',
-            level=log.INFO, # Change debug level to choose how verbose you want logging to be
-            filename=os.path.join(settings.LOG_PATH, logname+".txt"))
+            level=log.
+            INFO,  # Change debug level to choose how verbose you want logging to be
+            filename=os.path.join(settings.LOG_PATH, logname + ".txt"))
 
     log.info("{}: Checking for favourites".format(time.ctime()))
 
@@ -37,7 +38,6 @@ if __name__ == "__main__":
 
     if settings.TESTING == False:
         post_favourites()
-
 
     log.info('###############################################################')
     log.info('###############################################################')
@@ -53,7 +53,6 @@ if __name__ == "__main__":
         sys.exit(1)
     except Exception as exc:
         log.exception("Error with the scraping: %s" % str(exc))
-
 
 ## TODO
 

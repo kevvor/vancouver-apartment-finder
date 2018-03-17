@@ -21,10 +21,12 @@ def coord_distance(lat1, lon1, lat2, lon2):
     lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
     dlon = lon2 - lon1
     dlat = lat2 - lat1
-    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    a = math.sin(
+        dlat / 2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2)**2
     c = 2 * math.asin(math.sqrt(a))
     km = 6367 * c
-    return round(km,2)
+    return round(km, 2)
+
 
 def in_box(coords, box):
     """
@@ -37,6 +39,7 @@ def in_box(coords, box):
         return True
     return False
 
+
 def post_listing_to_slack(sc, listing, site):
     """
     Posts the listing to slack.
@@ -44,35 +47,44 @@ def post_listing_to_slack(sc, listing, site):
     :param listing: A record of the listing.
     :param site: craigslist or kijiji
     """
+    print('#### POSTING TO SLACK FROM CL ####')
+
     if settings.TESTING:
         channel = settings.TESTING_CHANNEL
     else:
         channel = settings.SLACK_CHANNELS.get(listing['area'],
-            settings.DEFAULT_CHANNEL)
+                                              settings.DEFAULT_CHANNEL)
 
     if settings.ENHANCED_POSTS:
         attachment = build_attachment(listing, site)
     else:
-        attachment = {"fallback": desc, 'color': settings.DEFAULT_COLOUR,
-            'text': desc}
+        attachment = {
+            "fallback": desc,
+            'color': settings.DEFAULT_COLOUR,
+            'text': desc
+        }
 
     sc.api_call(
-        "chat.postMessage", channel=channel, attachments=attachment,
-        username=settings.SLACK_BOT, icon_emoji=':robot_face:'
-    )
+        "chat.postMessage",
+        channel=channel,
+        attachments=attachment,
+        username=settings.SLACK_BOT,
+        icon_emoji=':robot_face:')
     return
+
 
 def get_desc(listing, site):
     if site == 'craigslist':
-        desc = "{0} | {1} | {2} | {3} | <{4}>".format(listing["area"],
-            listing["price"], listing["metro_dist"],
+        desc = "{0} | {1} | {2} | {3} | <{4}>".format(
+            listing["area"], listing["price"], listing["metro_dist"],
             listing["title"], listing["url"])
     elif site == 'kijiji':
-        desc = "{0} | {1} | <{2}>".format(listing['price'],
-            listing['title'], listing["url"])
+        desc = "{0} | {1} | <{2}>".format(listing['price'], listing['title'],
+                                          listing["url"])
     else:
         desc = "No description"
     return desc
+
 
 def build_attachment(listing, site):
     attachments = []
@@ -82,9 +94,9 @@ def build_attachment(listing, site):
     header = {
         "fallback": desc,
         'color': settings.DEFAULT_COLOUR,
-        "title": listing.get('title',None),
-        "title_link": listing.get('url',None),
-        "image_url": listing.get('image_url',None)
+        "title": listing.get('title', None),
+        "title_link": listing.get('url', None),
+        "image_url": listing.get('image_url', None)
         # "thumb_url": listing.get('image_url',None)
     }
 
@@ -96,36 +108,39 @@ def build_attachment(listing, site):
     return attachments
 
 
-
 def get_attachment_fields(listing, site):
     attachments = []
     post_fields = settings.SLACK_PARAMS[site]
 
-    colours = {key:get_colour(key, listing)
-        for key, field_desc in post_fields.items()}
-
-    fields = [{'short': True, 'value': field_desc + str(listing.get(key,''))}
+    colours = {
+        key: get_colour(key, listing)
         for key, field_desc in post_fields.items()
-        if colours[key] == settings.DEFAULT_COLOUR
-        ]
+    }
+
+    fields = [{
+        'short': True,
+        'value': field_desc + str(listing.get(key, ''))
+    } for key, field_desc in post_fields.items()
+              if colours[key] == settings.DEFAULT_COLOUR]
 
     if fields:
         payload = {
             'fallback': 'N/A',
             'color': settings.DEFAULT_COLOUR,
             'fields': fields
-            }
+        }
         attachments.append(payload)
 
     for param in settings.COLOUR_PARAM_ORDER:
         payload = {
             'fallback': 'N/A',
             'color': colours[param],
-            'text': post_fields[param] + str(listing.get(param,''))
+            'text': post_fields[param] + str(listing.get(param, ''))
         }
         attachments.append(payload)
 
     return attachments
+
 
 def get_colour(key, listing):
     """Score feature with a colour based on preferred ranges
@@ -142,7 +157,8 @@ def get_colour(key, listing):
 
             if colour_dict['type'] == 'range':
                 if isinstance(listing[key], str):
-                    value = float(listing[key].replace('$','').replace(',',''))
+                    value = float(listing[key].replace('$', '').replace(
+                        ',', ''))
                 else:
                     value = float(listing[key])
 
@@ -158,10 +174,11 @@ def get_colour(key, listing):
             return settings.DEFAULT_COLOUR
     except:
         log.exception('Error getting colour for key: %s listing: %s' %
-            (key, listing))
+                      (key, listing))
         return settings.DEFAULT_COLOUR
 
     return settings.DEFAULT_COLOUR
+
 
 def find_points_of_interest(geotag):
     """
@@ -188,7 +205,8 @@ def find_points_of_interest(geotag):
     for station, coords in settings.TRANSIT_STATIONS.items():
         dist = coord_distance(coords[0], coords[1], geotag[0], geotag[1])
 
-        if (min_dist is None or dist < min_dist) and dist < settings.MAX_TRANSIT_DIST:
+        if (min_dist is None
+                or dist < min_dist) and dist < settings.MAX_TRANSIT_DIST:
             near_metro = True
 
         if (min_dist is None or dist < min_dist):
@@ -203,6 +221,7 @@ def find_points_of_interest(geotag):
         "metro_dist": metro_dist,
         "metro": metro
     }
+
 
 def match_neighbourhood(location):
     """
@@ -233,23 +252,24 @@ def match_neighbourhood(location):
         "metro": metro
     }
 
+
 def OLD_get_attachment_fields(listing, site):
     attachments = []
     post_fields = settings.SLACK_PARAMS[site]
 
-    colours = {key:get_colour(key, listing)
-        for key, field_desc in post_fields.items()}
+    colours = {
+        key: get_colour(key, listing)
+        for key, field_desc in post_fields.items()
+    }
 
     for colour in settings.COLOUR_ORDER:
-        fields = [{'short': True, 'value': field_desc + str(listing.get(key,''))}
-            for key, field_desc in post_fields.items() if colours[key] == colour]
+        fields = [{
+            'short': True,
+            'value': field_desc + str(listing.get(key, ''))
+        } for key, field_desc in post_fields.items() if colours[key] == colour]
 
         if fields:
-            payload = {
-                'fallback': 'N/A',
-                'color': colour,
-                'fields': fields
-            }
+            payload = {'fallback': 'N/A', 'color': colour, 'fields': fields}
             attachments.append(payload)
 
     return attachments

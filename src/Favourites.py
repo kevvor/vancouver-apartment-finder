@@ -11,6 +11,7 @@ from src.DatabaseOperations import create_sqlite_session, Favourites
 
 session = create_sqlite_session()
 
+
 def get_posted_favourites():
     favourites = session.query(Favourites).all()
     links = [fav.link for fav in favourites]
@@ -20,11 +21,13 @@ def get_posted_favourites():
 def post_favourites():
     bot = slacker.Slacker(settings.SLACK_TOKEN)
     channels_response = bot.channels.list()
-    channel_dict = {chan['name']:chan['id']
-        for chan in channels_response.body['channels']}
+    channel_dict = {
+        chan['name']: chan['id']
+        for chan in channels_response.body['channels']
+    }
     posted_favourites = get_posted_favourites()
 
-    channels = list(set([c for key,c in settings.SLACK_CHANNELS.items()]))
+    channels = list(set([c for key, c in settings.SLACK_CHANNELS.items()]))
 
     # Create a slack client.
     sc = SlackClient(settings.SLACK_TOKEN)
@@ -54,14 +57,13 @@ def post_favourites():
     log.info('finished checking for favourites')
     return
 
+
 def post_and_hist_favourite(sc, title, link, desc):
-    post = [
-        {
-            "fallback": 'N/A',
-            'color': settings.DEFAULT_COLOUR,
-            "text": desc
-        }
-    ]
+    post = [{
+        "fallback": 'N/A',
+        'color': settings.DEFAULT_COLOUR,
+        "text": desc
+    }]
     post_favourite(sc, post, title)
 
     log.info('historizing listing %s to favourites' % title)
@@ -70,11 +72,14 @@ def post_and_hist_favourite(sc, title, link, desc):
     session.commit()
     return
 
+
 def post_favourite(sc, attachment, title):
     log.info('posting listing %s to favourites' % title)
     sc.api_call(
-        "chat.postMessage", channel='favourites', attachments=attachment,
-        username=settings.SLACK_BOT, icon_emoji=':robot_face:'
-    )
+        "chat.postMessage",
+        channel='favourites',
+        attachments=attachment,
+        username=settings.SLACK_BOT,
+        icon_emoji=':robot_face:')
 
     return
